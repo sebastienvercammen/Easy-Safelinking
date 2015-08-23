@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         Easy Safelinking
 // @namespace    http://www.sebastienvercammen.be/
-// @version      1.0
+// @version      1.1
 // @description  Add QoL to safelinking.net
 // @author       Sébastien Vercammen
 // @match        *://safelinking.net/*
 // @grant        GM_xmlhttpRequest
+// @downloadURL https://github.com/sebastienvercammen/Easy-Safelinking/raw/master/Easy%20Safelinking.user.js
+// @updateURL https://github.com/sebastienvercammen/Easy-Safelinking/raw/master/Easy%20Safelinking.user.js
 // ==/UserScript==
 
 (function(w) {
