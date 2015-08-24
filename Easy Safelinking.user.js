@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Easy Safelinking
 // @namespace    http://www.sebastienvercammen.be/
-// @version      1.1
+// @version      1.2
 // @description  Add QoL to safelinking.net
 // @author       Sébastien Vercammen
 // @match        *://safelinking.net/*
@@ -28,6 +28,8 @@
             // Reset counters
             w.easySafelinkingWorking = 0;
             w.easySafelinkingTotal = 0;
+            
+            w.runningRequests = 0;
 
             if(links.length) {
                 var html = '<h3>Status: <span id="easySafelinking-status">0/0</span></h3><h3>Worked:</h3><textarea id="easySafelinking-worked" style="width: 100%; min-height: 300px;"></textarea><h3>Failed:</h3><textarea id="easySafelinking-failed" style="width: 100%; min-height: 300px;"></textarea>';
@@ -37,41 +39,58 @@
                     w.easySafelinkingTotal++;
                     var l = links[i];
                     
-                    GM_xmlhttpRequest({
-                        method: "GET",
-                        url: window.location.protocol + "//www.alldebrid.com/service.php?" + 'link=' + encodeURIComponent(l) + '&nb=0&json=true&pw=',
-                        onload: function(res) {
-                            if(res.status == 200 && res.statusText == "OK") {
-                                var r;
-                                
-                                try {
-                                    r = JSON.parse(res.response);
-                                    
-                                    if(r.error == '') {
-                                        $('#easySafelinking-worked').text($('#easySafelinking-worked').text() + r.link + "\r\n");
-                                        w.easySafelinkingWorking++;
+                    w.runningRequests++;
+                    
+                    // Anon self-exec function to keep the proper "l" value
+                    (function(l) {
+                        setTimeout(function() {
+                            GM_xmlhttpRequest({
+                                method: "GET",
+                                url: window.location.protocol + "//www.alldebrid.com/service.php?" + 'link=' + encodeURIComponent(l) + '&nb=0&json=true&pw=',
+                                onload: function(res) {
+                                    w.runningRequests--;
+
+                                    var url = res.finalUrl;
+                                    url = decodeURIComponent(url.substr(0, url.indexOf('&nb')).substr(url.indexOf('http%3')));
+
+                                    if(res.status == 200 && res.statusText == "OK") {
+                                        var r;
+
+                                        try {
+                                            r = JSON.parse(res.response);
+
+                                            if(r.error == '') {
+                                                $('#easySafelinking-worked').text($('#easySafelinking-worked').text() + r.link + "\r\n");
+                                                w.easySafelinkingWorking++;
+                                            } else {
+                                                $('#easySafelinking-failed').text($('#easySafelinking-failed').text() + url + "\r\n");
+                                            }
+                                        } catch (e) {
+                                            // An error occured: it's not valid JSON, so something's up (maybe not logged in?)
+                                            if(res.response == 'login') {
+                                                alert("You're not logged in to alldebrid. Please verify.");
+                                            }
+
+                                            $('#easySafelinking-failed').text($('#easySafelinking-failed').text() + url + "\r\n");
+                                        }
                                     } else {
-                                        $('#easySafelinking-failed').text($('#easySafelinking-failed').text() + l + "\r\n");
+                                        $('#easySafelinking-failed').text($('#easySafelinking-failed').text() + url + "\r\n");
                                     }
-                                } catch (e) {
-                                    // An error occured: it's not valid JSON, so something's up (maybe not logged in?)
-                                    if(res.response == 'login') {
-                                        alert("You're not logged in to alldebrid. Please verify.");
-                                    }
-                                    
-                                    $('#easySafelinking-failed').text($('#easySafelinking-failed').text() + l + "\r\n");
+
+                                    $('#easySafelinking-status').text(w.easySafelinkingWorking + '/' + w.easySafelinkingTotal);
+                                },
+                                onerror: function(d) {
+                                    w.runningRequests--;
+
+                                    var url = res.finalUrl;
+                                    url = decodeURIComponent(url.substr(0, url.indexOf('&nb')).substr(url.indexOf('http%3')));
+
+                                    $('#easySafelinking-failed').text($('#easySafelinking-failed').text() + url + "\r\n");
+                                    $('#easySafelinking-status').text(w.easySafelinkingWorking + '/' + w.easySafelinkingTotal);
                                 }
-                            } else {
-                                $('#easySafelinking-failed').text($('#easySafelinking-failed').text() + l + "\r\n");
-                            }
-                            
-                            $('#easySafelinking-status').text(w.easySafelinkingWorking + '/' + w.easySafelinkingTotal);
-                        },
-                        onerror: function(d) {
-                            $('#easySafelinking-failed').text($('#easySafelinking-failed').text() + l + "\r\n");
-                            $('#easySafelinking-status').text(w.easySafelinkingWorking + '/' + w.easySafelinkingTotal);
-                        }
-                    });
+                            });
+                        }, w.runningRequests * 300);
+                    })(l);
                 }
 
                 clearInterval(w.easySafelinking);
