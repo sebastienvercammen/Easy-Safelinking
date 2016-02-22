@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Easy Safelinking
 // @namespace    http://www.sebastienvercammen.be/
-// @version      1.2
+// @version      1.2.1
 // @description  Add QoL to safelinking.net
 // @author       Sébastien Vercammen
 // @match        *://safelinking.net/*
@@ -15,7 +15,14 @@
 
     // Only run the following when jQuery is fully loaded
     $(function() {
+		// Use ENTER to submit form
         $('#captcha').on('keydown', '#adcopy_response', function(e) {
+            if(e.keyCode == 13) { // Enter
+                $('a[ng-click="validate()"]').click();
+            }
+        });
+		
+		$('div.input-password').on('keydown', 'input', function(e) {
             if(e.keyCode == 13) { // Enter
                 $('a[ng-click="validate()"]').click();
             }
