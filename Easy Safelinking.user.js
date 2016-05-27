@@ -60,13 +60,13 @@
                                     var url = res.finalUrl;
                                     url = decodeURIComponent(url.substr(0, url.indexOf('&nb')).substr(url.indexOf('http%3')));
 
-                                    if(res.status == 200 && res.statusText == "OK") {
+                                    if(res.status === 200) {
                                         var r;
 
                                         try {
                                             r = JSON.parse(res.response);
 
-                                            if(r.error == '') {
+                                            if(r.error === '') {
                                                 $('#easySafelinking-worked').text($('#easySafelinking-worked').text() + r.link + "\r\n");
                                                 w.easySafelinkingWorking++;
                                             } else {
@@ -74,7 +74,7 @@
                                             }
                                         } catch (e) {
                                             // An error occured: it's not valid JSON, so something's up (maybe not logged in?)
-                                            if(res.response == 'login') {
+                                            if(res.response === 'login') {
                                                 alert("You're not logged in to alldebrid. Please verify.");
                                             }
 
